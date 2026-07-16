@@ -1,0 +1,5 @@
+dbmanager
+schema
+config
+PyYAML
+mysql-connector-python
