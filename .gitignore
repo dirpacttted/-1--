@@ -8,3 +8,8 @@ out
 gen
 /SSL
 /led
+
+.env
+
+.venv
+__pycache__

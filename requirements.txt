@@ -1,5 +1,2 @@
-dbmanager
-schema
-config
-PyYAML
 mysql-connector-python
+python-dotenv

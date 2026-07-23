@@ -1,12 +1,12 @@
 services:
-#  Database
+  #  Database
   mysql:
     image: mysql:8.4
     container_name: mysql_db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root097
-      MYSQL_DATABASE: config_storage
+      MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD}
+      MYSQL_DATABASE: ${DATABASE_NAME}
     ports:
       - "3306:3306"
     volumes:

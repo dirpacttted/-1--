@@ -1,60 +1,69 @@
+import os
 import mysql.connector
 
-
 class DatabaseManager:
-
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, logger):
+        self.logger = logger
         self.connection = None
         self.cursor = None
 
     def connect(self):
         self.connection = mysql.connector.connect(
-            host=self.config["host"],
-            port=self.config["port"],
-            user=self.config["user"],
-            password=self.config["password"],
-            database=self.config["database"]
+            host=os.getenv("DATABASE_HOST"),
+            port=int(os.getenv("DATABASE_PORT")),
+            user=os.getenv("DATABASE_USERNAME"),
+            password=os.getenv("DATABASE_PASSWORD"),
+            database=os.getenv("DATABASE_NAME"),
         )
 
         self.cursor = self.connection.cursor()
 
-        print("Подключение к базе данных выполнено.")
+        self.logger.info("Подключение к базе данных выполнено")
 
     def check_database_structure(self):
-
         required_tables = [
             "configurations",
             "configurationversions",
             "metadataobjects",
-            "dataseparationsettings"
+            "dataseparationsettings",
         ]
 
         self.cursor.execute("SHOW TABLES")
-
-        existing_tables = [table[0] for table in self.cursor.fetchall()]
+        existing_tables = [table[0].lower() for table in self.cursor.fetchall()]
 
         if all(table in existing_tables for table in required_tables):
-            print("Структура базы данных соответствует.")
-        else:
-            print("Структура отсутствует. Создаём таблицы...")
+            self.logger.info("Структура базы данных проверена")
+            return
 
-            with open("schema.sql", "r", encoding="utf-8") as file:
-                sql_script = file.read()
+        self.logger.info("Создание структуры базы данных...")
 
-            commands = sql_script.split(";")
+        with open("schema.sql", "r", encoding="utf-8") as file:
+            sql_script = file.read()
 
-            for command in commands:
-                if command.strip():
-                    self.cursor.execute(command)
+        commands = sql_script.split(";")
 
-            self.connection.commit()
+        for command in commands:
+            if command.strip():
+                self.cursor.execute(command)
 
-            print("Структура создана.")
+        self.connection.commit()
+
+        self.logger.info("Структура базы данных создана")
+
+    def insert_configuration(self, configuration_data):
+        insert_query = """
+            INSERT INTO Configurations (name, synonym, default_download_path)
+            VALUES (%s, %s, %s)
+        """
+
+        self.cursor.execute(insert_query, configuration_data)
+        self.connection.commit()
+
+        self.logger.info(f"Конфигурация '{configuration_data[0]}' сохранена")
 
     def close(self):
         if self.connection:
             self.cursor.close()
             self.connection.close()
 
-            print("Соединение с базой данных закрыто.")
+            self.logger.info("Соединение с базой данных закрыто")
